@@ -564,26 +564,91 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ, 
             max_loop_count=cfg.MAX_LOOPS)
 
+def main():
+    # args = docopt(__doc__)
+    doc = '''
+        Usage:
+        my_program tcp <host> <port> [--timeout=<seconds>]
+        my_program serial <port> [--baud=<n>] [--timeout=<seconds>]
+        my_program (-h | --help | --version)
 
-if __name__ == '__main__':
-    args = docopt(__doc__)
+    Options:
+        -h, --help  Show this screen and exit.
+        --baud=<n>  Baudrate [default: 9600]
+    '''
+    argv = ['tcp', '127.0.0.1', '80', '--timeout', '30']
+    args = docopt(doc, argv)
+
+    # 手動測試時加入之引數(args) for args['drive'] #
+    args['drive'] = False
+    # args['--type'] = 'rnn'
+    # # --type = linear | categorical | rnn | latent
+    # args['--camera'] = None
+    # args['--model'] = None
+    # args['--js'] = None
+    # args['--meta'] = None
+
+    # 手動測試時加入之引數(args) for args['train'] #
+    args['train'] = True
+    args['--tub'] = r'data\tub_104_20-03-22'
+    args['--model'] = r'models\RNN_test_20200420_01.h5'
+    args['--transfer'] = None
+    args['--type'] = 'rnn'
+    # --type = linear | categorical | rnn | latent
+    args['--continuous'] = None
+    args['--aug'] = None
+    args['--file'] = None
+
+
     cfg = dk.load_config()
-    
+
     if args['drive']:
         model_type = args['--type']
         camera_type = args['--camera']
-        drive(cfg, model_path=args['--model'], use_joystick=args['--js'], model_type=model_type, camera_type=camera_type,
-            meta=args['--meta'])
-    
+        drive(cfg, model_path=args['--model'], use_joystick=args['--js'], model_type=model_type,
+              camera_type=camera_type,
+              meta=args['--meta'])
+
     if args['train']:
         from train import multi_train, preprocessFileList
-        
+
         tub = args['--tub']
         model = args['--model']
         transfer = args['--transfer']
         model_type = args['--type']
         continuous = args['--continuous']
-        aug = args['--aug']     
+        aug = args['--aug']
+
+        dirs = preprocessFileList(args['--file'])
+        if tub is not None:
+            tub_paths = [os.path.expanduser(n) for n in tub.split(',')]
+            dirs.extend(tub_paths)
+
+        multi_train(cfg, dirs, model, transfer, model_type, continuous, aug)
+
+if __name__ == '__main__':
+    # 測試用
+    # main()
+
+    # auto用
+    args = docopt(__doc__)
+    cfg = dk.load_config()
+
+    if args['drive']:
+        model_type = args['--type']
+        camera_type = args['--camera']
+        drive(cfg, model_path=args['--model'], use_joystick=args['--js'], model_type=model_type, camera_type=camera_type,
+            meta=args['--meta'])
+
+    if args['train']:
+        from train import multi_train, preprocessFileList
+
+        tub = args['--tub']
+        model = args['--model']
+        transfer = args['--transfer']
+        model_type = args['--type']
+        continuous = args['--continuous']
+        aug = args['--aug']
 
         dirs = preprocessFileList( args['--file'] )
         if tub is not None:
